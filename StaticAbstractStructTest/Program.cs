@@ -43,6 +43,7 @@ namespace StaticAbstractStructTest
         {
             // Avoid cctor deopt caused by AggressiveOptimization
             RuntimeHelpers.RunClassConstructor(typeof(OuterConfig).TypeHandle);
+            RuntimeHelpers.RunClassConstructor(typeof(InnerConfigWithInstanceMethod).TypeHandle);
         }
 
         private static void Main(string[] args)
@@ -57,6 +58,7 @@ namespace StaticAbstractStructTest
 
             OptimizedMethod<OuterConfig>();
             OptimizedMethod2<OuterConfig>();
+            UnOptimizedMethod3();
             // UnOptimizedMethod<OuterConfig>();
             // UnOptimizedMethod2<OuterConfig>(true);
         }
@@ -115,6 +117,38 @@ namespace StaticAbstractStructTest
             {
                 return 0;
             }
+        }
+
+        private struct InnerConfigWithInstanceMethod
+        {
+            public static readonly InnerConfigWithInstanceMethod CONFIG = new(true);
+            
+            private bool IsEnabled;
+            
+            public InnerConfigWithInstanceMethod(bool isEnabled)
+            {
+                IsEnabled = isEnabled;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public readonly nint Run()
+            {
+                if (IsEnabled)
+                {
+                    return 69;
+                }
+            
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+        
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
+        private static nint UnOptimizedMethod3()
+        {
+            return InnerConfigWithInstanceMethod.CONFIG.Run();
         }
     }
 }
